@@ -1,0 +1,118 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 93bd07b2b7e1f0644a27c67e140f9f37, type: 3}
+  m_Name: ManualData
+  m_EditorClassIdentifier: 
+  sections:
+  - title: BASICS
+    body: 'Each chapter is one patient.
+
+      Read the file. Prepare. Operate. Clean
+      the organ. Send it.'
+    unlockChapter: 1
+  - title: WORKSHOP
+    body: 'Swipe to move between rooms.
+
+      Fridge: buy reagents.
+
+      Book:
+      read patient files.
+
+      Terminal: patient list and delivery.'
+    unlockChapter: 1
+  - title: OPERATION
+    body: 'Swipe along the line to cut.
+
+      Use clamps to open the tissue.
+
+      Cut
+      the vessels in the correct order.
+
+      Drag the organ into the container.
+
+      Every
+      mistake lowers quality.'
+    unlockChapter: 1
+  - title: INSPECTION
+    body: 'Tap the dark spots to mark infection.
+
+      Missed spots lower purity.'
+    unlockChapter: 1
+  - title: CLEANING
+    body: 'Rub the organ under water to remove grime.
+
+      Place it in the bath
+      and pull it out in time.
+
+      Too long ruins it.'
+    unlockChapter: 1
+  - title: MATCHING
+    body: Read the symptoms in the patient book. Choose the additive that fits. Wrong
+      choice lowers compatibility.
+    unlockChapter: 1
+  - title: PACKING
+    body: 'Place the organ in the container.
+
+      Add gel. Hold to seal.
+
+      Write
+      the batch number on the label.'
+    unlockChapter: 1
+  - title: DELIVERY
+    body: 'Choose a courier.
+
+      Express costs more and keeps the organ fresh.
+
+      Standard
+      is cheaper and lowers freshness.'
+    unlockChapter: 1
+  - title: FRIDGE
+    body: 'Reagents cost money.
+
+      Your budget is limited.
+
+      Buy only what
+      the patient needs.'
+    unlockChapter: 1
+  - title: QUALITY AND PAY
+    body: Final quality = operation + cleaning + compatibility. Freshness is applied
+      after delivery. Higher quality pays more. Below minimum quality, the order
+      fails.
+    unlockChapter: 1
+  - title: BELLOWS  (NEW, chapter 2)
+    body: 'Tap in rhythm to pump the wash through the lungs.
+
+      Clear water means
+      clean.'
+    unlockChapter: 2
+  - title: INFLATION  (NEW, chapter 2)
+    body: 'Hold to inflate the lungs.
+
+      Release inside the green zone.
+
+      Overinflate
+      and the organ bursts.'
+    unlockChapter: 2
+  - title: SHELL  (NEW, chapter 3)
+    body: 'Find the weak points in the carapace.
+
+      Strike in rhythm.
+
+      A
+      wrong strike damages the heart.'
+    unlockChapter: 3
+  - title: PULSE  (NEW, chapter 3)
+    body: 'Repeat the rhythm shown in the patient file.
+
+      Three correct series
+      in a row.'
+    unlockChapter: 3

@@ -1,115 +1,116 @@
-
 using UnityEngine;
 using TMPro;
 
 public class SurgeryGameManager : MonoBehaviour
 {
-    [Header("Game Panels")]
+    [Header("Panels")]
     [SerializeField] private GameObject patientOrderPanel;
     [SerializeField] private GameObject surgeryPanel;
-    [SerializeField] private GameObject resultPanel;
+    [SerializeField] private GameObject workshopPanel;   // куда уходим после операции
+    [SerializeField] private GameObject resultPanel;     // необязательно
 
     [Header("UI Text")]
     [SerializeField] private TMP_Text qualityText;
-    [SerializeField] private TMP_Text finalQualityText;
-    [SerializeField] private TMP_Text resultTitle;
+    [SerializeField] private TMP_Text finalQualityText;  // необязательно
+    [SerializeField] private TMP_Text resultTitle;       // необязательно
 
+    [Header("Operation stages")]
+    [SerializeField] private IncisionController incisionController;
     [SerializeField] private GameObject incisionArea;
     [SerializeField] private GameObject tissueOpeningArea;
     [SerializeField] private TissueOpeningManager tissueOpeningManager;
-
-
-    [SerializeField] private IncisionController incisionController;
-    [SerializeField] private GameObject vesselStage;
-    [SerializeField] private VesselCuttingManager vesselCuttingManager;
-    [Header("Organ Extraction")]
+    [SerializeField] private GameObject organStage;      // печень + контейнер
     [SerializeField] private OrganDrag organDrag;
-    [SerializeField] private GameObject organContainer;
+
+    [Header("Quality")]
+    [SerializeField] private int mistakePenalty = 5;     // -5% за срыв
+    [SerializeField] private int minQuality = 60;
+
+    [Header("After operation")]
+    [Tooltip("Включено: сначала панель результата (кнопка Continue вызывает GoToWorkshop). " +
+             "Выключено: сразу в мастерскую.")]
+    [SerializeField] private bool showResultFirst = false;
 
     private int organQuality = 100;
+    public int OrganQuality => organQuality;
 
     private void Start()
     {
-        ShowPatientOrder();
+        ResetOperationState();
     }
 
-    public void ShowPatientOrder()
+    private void ResetOperationState()
     {
         organQuality = 100;
 
-        if (incisionArea != null)
-            incisionArea.SetActive(true);
+        if (incisionArea != null) incisionArea.SetActive(true);
+        if (tissueOpeningArea != null) tissueOpeningArea.SetActive(false);
+        if (organStage != null) organStage.SetActive(false);
 
-        if (tissueOpeningArea != null)
-            tissueOpeningArea.SetActive(false);
-
-        if (incisionController != null)
-            incisionController.ResetIncision();
-
-        if (tissueOpeningManager != null)
-            tissueOpeningManager.ResetOpening();
-        if (vesselCuttingManager != null)
-            vesselCuttingManager.ResetVessels();
-
-        if (vesselStage != null)
-            vesselStage.SetActive(false);
-        if (organDrag != null)
-            organDrag.ResetOrgan();
-
-        if (organContainer != null)
-            organContainer.SetActive(false);
-        patientOrderPanel.SetActive(true);
-        surgeryPanel.SetActive(false);
-        resultPanel.SetActive(false);
-    }
-
-    public void BeginOperation()
-    {
-        patientOrderPanel.SetActive(false);
-        surgeryPanel.SetActive(true);
-        resultPanel.SetActive(false);
-        if (vesselStage != null)
-            vesselStage.SetActive(false);
-        if (organContainer != null)
-            organContainer.SetActive(false);
+        if (incisionController != null) incisionController.ResetIncision();
+        if (tissueOpeningManager != null) tissueOpeningManager.ResetOpening();
+        if (organDrag != null) organDrag.ResetOrgan();
 
         UpdateQualityUI();
     }
 
+    public void ShowPatientOrder()
+    {
+        ResetOperationState();
+        SetPanels(patient: true);
+    }
+
+    public void BeginOperation()
+    {
+        ResetOperationState();
+        SetPanels(surgery: true);
+    }
+
+    // Вызывать при срыве линии разреза
     public void MakeMistake()
     {
-        organQuality -= 10;
-        organQuality = Mathf.Clamp(organQuality, 0, 100);
-
+        organQuality = Mathf.Clamp(organQuality - mistakePenalty, 0, 100);
         UpdateQualityUI();
     }
 
     private void UpdateQualityUI()
     {
-        qualityText.text = "ORGAN QUALITY: " + organQuality + "%";
+        if (qualityText != null)
+            qualityText.text = "ORGAN QUALITY: " + organQuality + "%";
     }
 
+    // Вызывается из OrganDrag, когда орган лёг в контейнер
     public void CompleteOperation()
     {
-        patientOrderPanel.SetActive(false);
-        surgeryPanel.SetActive(false);
-        resultPanel.SetActive(true);
-
-        finalQualityText.text = "FINAL QUALITY: " + organQuality + "%";
-
-        if (organQuality >= 60)
+        if (showResultFirst && resultPanel != null)
         {
-            resultTitle.text = "OPERATION SUCCESSFUL";
+            SetPanels(result: true);
+            if (finalQualityText != null) finalQualityText.text = "FINAL QUALITY: " + organQuality + "%";
+            if (resultTitle != null)
+                resultTitle.text = organQuality >= minQuality ? "OPERATION SUCCESSFUL" : "OPERATION FAILED";
         }
         else
         {
-            resultTitle.text = "OPERATION FAILED";
+            GoToWorkshop();
         }
+    }
+
+    // Можно повесить на кнопку Continue на панели результата
+    public void GoToWorkshop()
+    {
+        SetPanels(workshop: true);
     }
 
     public void RestartOperation()
     {
         ShowPatientOrder();
     }
-}
 
+    private void SetPanels(bool patient = false, bool surgery = false, bool workshop = false, bool result = false)
+    {
+        if (patientOrderPanel != null) patientOrderPanel.SetActive(patient);
+        if (surgeryPanel != null) surgeryPanel.SetActive(surgery);
+        if (workshopPanel != null) workshopPanel.SetActive(workshop);
+        if (resultPanel != null) resultPanel.SetActive(result);
+    }
+}

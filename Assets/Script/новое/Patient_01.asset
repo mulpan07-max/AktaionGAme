@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2ea462b91e5bebc4c8fd5072cd66fa00, type: 3}
+  m_Name: Patient_01
+  m_EditorClassIdentifier: 
+  patientId: 001
+  patientName: NURLAN K.
+  age: 48
+  occupation: TAXI DRIVER
+  diagnosis: CIRRHOSIS
+  symptoms: WEAK IMMUNITY, YELLOW SKIN
+  requiredOrgan: LIVER
+  minQuality: 60%
+  specimen: BLOODSUCKER
+  payment: 150
+  delivery: "STANDARD / EXPRESS\t"
+  showDiagnosis: 1
+  face: {fileID: 9213897532890831479, guid: 74d2ac0ef73eb2a4ba47b496fcd5f977, type: 3}

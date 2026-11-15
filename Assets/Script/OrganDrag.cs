@@ -1,106 +1,118 @@
-
+using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-public class OrganDrag : MonoBehaviour,
-    IBeginDragHandler,
-    IDragHandler,
-    IEndDragHandler
+public class OrganDrag : MonoBehaviour, IPointerDownHandler, IDragHandler, IPointerUpHandler
 {
-    [Header("References")]
-    [SerializeField] private RectTransform organContainer;
     [SerializeField] private SurgeryGameManager gameManager;
+    [SerializeField] private RectTransform container;      // зона контейнера
+    [SerializeField] private TMP_Text instructionText;     // тот же текст-подсказка
 
-    private RectTransform rectTransform;
+    [Header("Pulse")]
+    [SerializeField] private float pulseAmount = 0.05f;
+    [SerializeField] private float pulseSpeed = 3f;
+
+    [Header("Behaviour")]
+    [SerializeField] private float returnSpeed = 12f;
+    [SerializeField] private float completeDelay = 0.6f;
+
+    private RectTransform rt;
     private RectTransform parentRect;
-    private Canvas rootCanvas;
+    private Vector3 startLocalPos;
+    private Vector3 baseScale;
+    private Vector2 grabOffset;
+    private bool captured, grabbed, placed, returning;
 
-    private Vector2 initialPosition;
-    private Vector2 pointerOffset;
-
-    private bool canDrag;
-    private bool extracted;
-
-    private void Awake()
+    private void EnsureCaptured()
     {
-        rectTransform = GetComponent<RectTransform>();
-        parentRect = rectTransform.parent as RectTransform;
-        rootCanvas = GetComponentInParent<Canvas>().rootCanvas;
-
-        initialPosition = rectTransform.anchoredPosition;
+        if (captured) return;
+        rt = (RectTransform)transform;
+        parentRect = rt.parent as RectTransform;
+        startLocalPos = rt.localPosition;
+        baseScale = rt.localScale;
+        captured = true;
     }
 
-    public void EnableExtraction()
+    private void OnEnable()
     {
-        canDrag = true;
+        EnsureCaptured();
+        if (instructionText != null && !placed) instructionText.text = "TAP THE LIVER";
     }
 
-    public void OnBeginDrag(PointerEventData eventData)
+    private void Update()
     {
-        if (!canDrag || extracted)
-            return;
+        if (!captured || placed) return;
 
-        if (RectTransformUtility.ScreenPointToLocalPointInRectangle(
-            parentRect,
-            eventData.position,
-            eventData.pressEventCamera,
-            out Vector2 localPoint))
+        if (returning)
         {
-            pointerOffset =
-                rectTransform.anchoredPosition - localPoint;
+            rt.localPosition = Vector3.Lerp(rt.localPosition, startLocalPos, 1f - Mathf.Exp(-returnSpeed * Time.unscaledDeltaTime));
+            if ((rt.localPosition - startLocalPos).sqrMagnitude < 0.25f)
+            {
+                rt.localPosition = startLocalPos;
+                returning = false;
+            }
         }
+
+        // Пульсация-подсказка, пока орган не взят
+        if (!grabbed)
+            rt.localScale = baseScale * (1f + Mathf.Sin(Time.unscaledTime * pulseSpeed) * pulseAmount);
     }
 
-    public void OnDrag(PointerEventData eventData)
+    public void OnPointerDown(PointerEventData e)
     {
-        if (!canDrag || extracted)
-            return;
+        EnsureCaptured();
+        if (placed) return;
 
-        if (RectTransformUtility.ScreenPointToLocalPointInRectangle(
-            parentRect,
-            eventData.position,
-            eventData.pressEventCamera,
-            out Vector2 localPoint))
-        {
-            rectTransform.anchoredPosition =
-                localPoint + pointerOffset;
-        }
+        grabbed = true;
+        returning = false;
+        rt.localScale = baseScale;
+        rt.SetAsLastSibling(); // над контейнером
+
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(parentRect, e.position, e.pressEventCamera, out Vector2 local);
+        grabOffset = (Vector2)rt.localPosition - local;
+
+        if (instructionText != null) instructionText.text = "DRAG IT TO THE CONTAINER";
     }
 
-    public void OnEndDrag(PointerEventData eventData)
+    public void OnDrag(PointerEventData e)
     {
-        if (!canDrag || extracted)
-            return;
+        if (!grabbed || placed) return;
+        if (RectTransformUtility.ScreenPointToLocalPointInRectangle(parentRect, e.position, e.pressEventCamera, out Vector2 local))
+            rt.localPosition = local + grabOffset;
+    }
 
-        bool insideContainer =
-            RectTransformUtility.RectangleContainsScreenPoint(
-                organContainer,
-                eventData.position,
-                eventData.pressEventCamera
-            );
+    public void OnPointerUp(PointerEventData e)
+    {
+        if (!grabbed || placed) return;
+        grabbed = false;
 
-        if (insideContainer)
+        if (container != null &&
+            RectTransformUtility.RectangleContainsScreenPoint(container, e.position, e.pressEventCamera))
         {
-            extracted = true;
-            canDrag = false;
-
-            gameManager.CompleteOperation();
+            placed = true;
+            rt.position = container.position; // ложим в центр контейнера
+            if (instructionText != null) instructionText.text = "ORGAN EXTRACTED";
+            Invoke(nameof(Finish), completeDelay);
         }
         else
         {
-            rectTransform.anchoredPosition = initialPosition;
+            returning = true;
+            if (instructionText != null) instructionText.text = "DRAG IT TO THE CONTAINER";
         }
+    }
+
+    private void Finish()
+    {
+        if (gameManager != null) gameManager.CompleteOperation();
     }
 
     public void ResetOrgan()
     {
-        canDrag = false;
-        extracted = false;
-
-        if (rectTransform == null)
-            rectTransform = GetComponent<RectTransform>();
-
-        rectTransform.anchoredPosition = initialPosition;
+        EnsureCaptured();
+        CancelInvoke();
+        grabbed = placed = returning = false;
+        rt.localPosition = startLocalPos;
+        rt.localScale = baseScale;
     }
 }
 
