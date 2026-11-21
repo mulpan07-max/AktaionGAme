@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Patient_02
   m_EditorClassIdentifier: 
   patientId: 002
-  patientName: AIGERIM S
+  patientName: LEON L.
   age: 31
   occupation: TEACHER
   diagnosis: PULMONARY FIBROSIS
@@ -24,4 +24,4 @@ MonoBehaviour:
   payment: 220
   delivery: EXPRESS ADVISED
   showDiagnosis: 0
-  face: {fileID: 0}
+  face: {fileID: 21300000, guid: 8ac704b3fb4933247a0f0de37fd5e2ea, type: 3}

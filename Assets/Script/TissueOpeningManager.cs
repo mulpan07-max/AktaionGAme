@@ -30,13 +30,38 @@ public class TissueOpeningManager : MonoBehaviour
 
     [Header("UI / next stage")]
     [SerializeField] private TMP_Text instructionText;
-    [SerializeField] private GameObject organStage;   // печень + контейнер
+    [SerializeField] private GameObject organStage;   // орган + контейнер (OrganDrag)
+
+    [Header("Level 2: зажим бронха (необязательно)")]
+    [Tooltip("Если задан - после раскрытия обеих сторон сначала идёт этап зажима, и только потом organStage. " +
+             "Если пусто - всё как раньше (Level 1).")]
+    [SerializeField] private LungClampStage clampStage;
+    [SerializeField] private bool hideClampStageWhenDone = true;
+    [SerializeField] private string clampInstruction = "CLAMP THE BRONCHUS";
+    [SerializeField] private string afterClampInstruction = "TAKE THE LUNG OUT";
+    [Tooltip("Текст, когда этапа зажима нет (Level 1: TAP THE LIVER)")]
+    [SerializeField] private string organInstruction = "TAP THE LIVER";
+
+    [Header("Level 2: укол шприцем после раскрытия тканей (необязательно)")]
+    [Tooltip("Если задан - после раскрытия обеих сторон сначала идёт укол шприцем, " +
+             "и только потом этап зажима / орган. Если пусто - сразу дальше.")]
+    [SerializeField] private InjectionStage injectionStage;
 
     private bool leftOpened, rightOpened;
     private float leftProgress, rightProgress;
     private Sprite baseSprite;
     private bool leftCaptured, rightCaptured;
+    private bool bodyFrozen;   // картинку тела больше не меняют (после укола)
+    private Sprite originalBothOpened;   // Both Opened Sprite, каким он был в сцене
+    private Sprite originalBodySprite;   // спрайт тела в начале сцены
+    private bool bodyReplaced;
     private Vector2 leftStart, rightStart;
+
+    private void Awake()
+    {
+        originalBothOpened = bothOpenedSprite;
+        if (bodyImage != null) originalBodySprite = bodyImage.sprite;
+    }
 
     private void Start()
     {
@@ -87,9 +112,25 @@ public class TissueOpeningManager : MonoBehaviour
         }
     }
 
+    // Замораживает картинку тела (вызывает InjectionStage после укола),
+    // чтобы ткани её больше не перезаписывали.
+    public void FreezeBody(bool frozen) { bodyFrozen = frozen; }
+
+    // После укола: заменяет "Both Opened Sprite" на второй вариант, сразу ставит его на тело
+    // и замораживает тело, чтобы ткани его не перезаписывали. Сбрасывается в ResetOpening().
+    public void ReplaceBodySprite(Sprite newSprite)
+    {
+        if (newSprite == null) return;
+        bothOpenedSprite = newSprite;
+        bodyReplaced = true;
+        bodyFrozen = true;
+        if (bodyImage != null) bodyImage.sprite = newSprite;
+    }
+
     public void ReportProgress(bool isLeft, float progress)
     {
         if (bodyImage == null) return;
+        if (bodyFrozen) return;
         if (baseSprite == null)
             baseSprite = zeroStageSprite != null ? zeroStageSprite : bodyImage.sprite;
 
@@ -145,13 +186,50 @@ public class TissueOpeningManager : MonoBehaviour
             if (bothOpenedSprite != null && bodyImage != null)
                 bodyImage.sprite = bothOpenedSprite;
 
-            if (instructionText != null) instructionText.text = "TAP THE LIVER";
+            if (injectionStage != null)
+            {
+                // Level 2: сначала укол шприцем
+                injectionStage.Begin(ProceedAfterOpening);
+            }
+            else
+            {
+                ProceedAfterOpening();
+            }
+        }
+        else
+        {
+            SetInstruction("OPEN THE OTHER SIDE");
+        }
+    }
+
+    // Ткани раскрыты (и укол сделан, если он есть) -> зажим бронха или орган
+    private void ProceedAfterOpening()
+    {
+        if (clampStage != null)
+        {
+            // Level 2: зажим бронха, сосуды
+            SetInstruction(clampInstruction);
+            clampStage.Begin(OnClampDone);
+        }
+        else
+        {
+            // Level 1: как раньше
+            SetInstruction(organInstruction);
             if (organStage != null) organStage.SetActive(true);
         }
-        else if (instructionText != null)
-        {
-            instructionText.text = "OPEN THE OTHER SIDE";
-        }
+    }
+
+    // Бронх зажат -> можно доставать орган
+    private void OnClampDone()
+    {
+        SetInstruction(afterClampInstruction);
+        if (hideClampStageWhenDone && clampStage != null) clampStage.gameObject.SetActive(false);
+        if (organStage != null) organStage.SetActive(true);
+    }
+
+    private void SetInstruction(string text)
+    {
+        if (instructionText != null) instructionText.text = text;
     }
 
     public void ResetOpening()
@@ -160,8 +238,18 @@ public class TissueOpeningManager : MonoBehaviour
         leftProgress = rightProgress = 0f;
         baseSprite = null;
         leftCaptured = rightCaptured = false;
+        bodyFrozen = false;
+
+        if (bodyReplaced)
+        {
+            bothOpenedSprite = originalBothOpened;
+            if (bodyImage != null) bodyImage.sprite = originalBodySprite;
+            bodyReplaced = false;
+        }
 
         if (leftTissue != null) leftTissue.ResetTissue();
         if (rightTissue != null) rightTissue.ResetTissue();
+        if (clampStage != null) clampStage.ResetStage();
+        if (injectionStage != null) injectionStage.ResetStage();
     }
 }

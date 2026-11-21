@@ -24,4 +24,4 @@ MonoBehaviour:
   payment: 150
   delivery: "STANDARD / EXPRESS\t"
   showDiagnosis: 1
-  face: {fileID: 9213897532890831479, guid: 74d2ac0ef73eb2a4ba47b496fcd5f977, type: 3}
+  face: {fileID: 21300000, guid: b38585f009e8b9a4280def908bd37b7a, type: 3}

@@ -1,34 +1,37 @@
 using UnityEngine;
 
-// Выдвижная плашка слева: свайп вправо от левой части открывает, свайп влево закрывает
+// Выдвижная плашка: свайп вправо из левой части открывает, свайп влево закрывает
 public class SideDrawer : MonoBehaviour
 {
     [Header("Плашка")]
-    public RectTransform drawer;          // сама плашка
+    public RectTransform drawer;
+
+    [Header("Позиции (Anchored Position, как в Inspector)")]
+    public Vector2 hiddenPosition = new Vector2(-1542.849f, -541.045f); // где плашка в начале (закрыта)
+    [Tooltip("Включено: открытой считается позиция, в которой плашка стоит в сцене. " +
+             "Выключено: берётся Shown Position ниже.")]
+    public bool useSceneAsShownPosition = true;
+    public Vector2 shownPosition = Vector2.zero;
 
     [Header("Настройки")]
-    [Range(0.05f, 0.6f)] public float openZone = 0.3f;   // левая часть экрана (доля ширины), где свайп открывает
-    public float minSwipeDistance = 100f;                // минимальная длина свайпа, px
-    public float slideSpeed = 12f;                       // скорость анимации
+    [Range(0.05f, 0.6f)] public float openZone = 0.3f;
+    public float minSwipeDistance = 100f;
+    public float slideSpeed = 12f;
 
     bool isOpen;
     bool isSwiping;
     bool startedInZone;
     Vector2 startPos;
-    float hiddenX, shownX;
 
     void Start()
     {
         if (drawer == null) return;
 
-        // Привязываем плашку к левому краю
-        drawer.anchorMin = new Vector2(0f, drawer.anchorMin.y);
-        drawer.anchorMax = new Vector2(0f, drawer.anchorMax.y);
-        drawer.pivot = new Vector2(0f, drawer.pivot.y);
+        // Якоря и pivot НЕ меняем: остаются такими, как настроены в Inspector
+        if (useSceneAsShownPosition)
+            shownPosition = drawer.anchoredPosition;
 
-        shownX = 0f;
-        hiddenX = -drawer.rect.width;
-        drawer.anchoredPosition = new Vector2(hiddenX, drawer.anchoredPosition.y);
+        drawer.anchoredPosition = hiddenPosition;
     }
 
     void Update()
@@ -37,11 +40,10 @@ public class SideDrawer : MonoBehaviour
 
         ReadInput();
 
-        // Плавное движение к нужной позиции
-        float targetX = isOpen ? shownX : hiddenX;
-        Vector2 pos = drawer.anchoredPosition;
-        pos.x = Mathf.Lerp(pos.x, targetX, 1f - Mathf.Exp(-slideSpeed * Time.unscaledDeltaTime));
-        drawer.anchoredPosition = pos;
+        Vector2 target = isOpen ? shownPosition : hiddenPosition;
+        drawer.anchoredPosition = Vector2.Lerp(
+            drawer.anchoredPosition, target,
+            1f - Mathf.Exp(-slideSpeed * Time.unscaledDeltaTime));
     }
 
     void ReadInput()
@@ -74,13 +76,12 @@ public class SideDrawer : MonoBehaviour
 
         Vector2 delta = pos - startPos;
         if (Mathf.Abs(delta.x) < minSwipeDistance) return;
-        if (Mathf.Abs(delta.x) < Mathf.Abs(delta.y)) return; // вертикальный свайп игнорируем
+        if (Mathf.Abs(delta.x) < Mathf.Abs(delta.y)) return;
 
-        if (delta.x > 0 && !isOpen && startedInZone) isOpen = true;   // вправо из левой части -> открыть
-        else if (delta.x < 0 && isOpen) isOpen = false;               // влево -> закрыть
+        if (delta.x > 0 && !isOpen && startedInZone) isOpen = true;
+        else if (delta.x < 0 && isOpen) isOpen = false;
     }
 
-    // Можно вызывать с кнопок
     public void Open() => isOpen = true;
     public void Close() => isOpen = false;
 }

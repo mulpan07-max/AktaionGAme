@@ -10,6 +10,13 @@ public class PatientCardView : MonoBehaviour
     [Header("Data (3 assets, chapter 1..3)")]
     public PatientData[] patients = new PatientData[3];
 
+    [Header("Глава")]
+    [Tooltip("0 = брать номер главы из GameState. 1, 2, 3 = всегда показывать этого пациента " +
+             "(в сцене Level 2 поставьте 2)")]
+    public int forceChapter = 0;
+    [Tooltip("Писать в Console, какой пациент выбран (для проверки)")]
+    public bool debugLog = false;
+
     [Header("Тексты (пустые поля просто пропускаются)")]
     public TMP_Text patientIdText;     // PatientIDText
     public TMP_Text nameText;          // Name Text
@@ -24,6 +31,27 @@ public class PatientCardView : MonoBehaviour
     public Button beginButton;
     public UnityEvent OnBeginOperation;
 
+    // Текущий номер главы (1..3)
+    public int ChapterNumber
+    {
+        get
+        {
+            if (forceChapter > 0) return forceChapter;
+            return GameState.Instance != null ? GameState.Instance.CurrentChapter : 1;
+        }
+    }
+
+    // Текущий пациент (используется и экраном итогов)
+    public PatientData Current
+    {
+        get
+        {
+            int ch = ChapterNumber;
+            if (patients == null || ch < 1 || ch > patients.Length) return null;
+            return patients[ch - 1];
+        }
+    }
+
     void Awake()
     {
         if (beginButton != null) beginButton.onClick.AddListener(() => OnBeginOperation?.Invoke());
@@ -31,7 +59,7 @@ public class PatientCardView : MonoBehaviour
 
     void OnEnable()
     {
-        GameState.Instance.Changed += Refresh;
+        if (GameState.Instance != null) GameState.Instance.Changed += Refresh;
         Refresh();
     }
 
@@ -42,9 +70,10 @@ public class PatientCardView : MonoBehaviour
 
     public void Refresh()
     {
-        int ch = GameState.Instance.CurrentChapter;
-        if (patients == null || ch < 1 || ch > patients.Length || patients[ch - 1] == null) return;
-        PatientData p = patients[ch - 1];
+        PatientData p = Current;
+        if (debugLog)
+            Debug.Log("PatientCardView: chapter = " + ChapterNumber + ", patient = " + (p != null ? p.patientName : "NULL (проверьте массив Patients)"));
+        if (p == null) return;
 
         Set(nameText, p.patientName);
         Set(ageText, "AGE: " + p.age);
